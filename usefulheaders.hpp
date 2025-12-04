@@ -1,6 +1,7 @@
 #ifndef LEXICAL_ANALYSER_H
 #define LEXICAL_ANALYSER_H
 #include <fstream>
+#include <unordered_map>
 #define LETTER 0
 #define DIGIT 1
 #define UNKNOWN 99
@@ -9,8 +10,10 @@
 //Token codes
 
 // going to define the custom codes for the project after right paren to make it easier to understand
-#define INT_LIT 10
+#define INT_CONST 10
 #define IDENT 11
+#define FLOAT_CONST 12
+#define COMMA 13
 #define ASSIGN_OP 20
 #define ADD_OP 21
 #define SUB_OP 22
@@ -32,10 +35,27 @@ extern int nextToken;
 extern char lexeme[];
 extern FILE *in_fp;
 
+
+
 int lex();
 void getChar();
 void addChar();
 void getNonBlank();
-int checkKeyword();
 
+
+//will be used by the symboltable later on
+enum DataType {
+    TYPE_INT,
+    TYPE_FLOAT,
+    TYPE_UNKNOWN   // useful for errors
+};
+//this will hold every identifier's important symboltable info
+struct SymbolInfo{
+    DataType type = TYPE_FLOAT;
+    float value = 0.0;
+    bool initialized = true;
+};
+extern std::unordered_map<std::string, SymbolInfo> symbolTable;
+extern std::string lexeme_s;
+extern int integerLiteral;
 #endif

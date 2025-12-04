@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include "usefulheaders.hpp"
 #include <string.h>
-
+#include <cstdlib>
 /* Global declarations */
 /* Variables */
 int charClass;
@@ -12,8 +12,9 @@ char nextChar;
 int lexLen;
 int token;
 int nextToken;
+int integerLiteral;
 FILE *in_fp, *fopen();
-
+std::string lexeme_s;
 /*****************************************************/
 /* lookup - a function to lookup operators and parentheses
 and return the token */
@@ -53,6 +54,10 @@ int lookup(char ch)
     case '=':
         addChar();
         nextToken = ASSIGN_OP;
+        break;
+    case ',':
+        addChar();
+        nextToken = COMMA;
         break;
     default:
         addChar();
@@ -127,8 +132,21 @@ int lex()
             addChar();
             getChar();
         }
-        nextToken = IDENT;
-        //        checkKeyword();
+        lexeme_s = lexeme;
+
+        if (lexeme_s == "int")
+        {
+            nextToken = INT_KEYWORD;
+        }
+        else if (lexeme_s == "float")
+        {
+            nextToken = FLOAT_KEYWORD;
+        }
+        else
+        {
+            nextToken = IDENT;
+        }
+
         break;
     /* Parse integer literals */
     case DIGIT:
@@ -139,7 +157,7 @@ int lex()
             addChar();
             getChar();
         }
-        nextToken = INT_LIT;
+        integerLiteral = atoi(lexeme);
         break;
     /* Parentheses and operators */
     case UNKNOWN:
@@ -155,8 +173,6 @@ int lex()
         lexeme[3] = 0;
         break;
     } /* End of switch */
-    std::cout << "Next token is: " << nextToken << " Next lexeme is " << lexeme << std::endl;
+    // std::cout << "Next token is: " << nextToken << " Next lexeme is " << lexeme << std::endl;
     return nextToken;
 } /* End of function lex */
-
-// had to cheat a bit, I didn't see a better way in C to compare strings, this function just handles the keywords at the start of the front.in files
