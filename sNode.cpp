@@ -14,3 +14,4 @@ sNode* sNode::mkSnode(Label l, Content c, sNode* left_child, sNode* right_child)
 {
     return new sNode(l, c, left_child, right_child);
 }
+
