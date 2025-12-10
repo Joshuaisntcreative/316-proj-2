@@ -8,7 +8,9 @@ public:
         OP,
         INT_CONSTANT,
         IDENTIFIER,
-        FLOAT_CONSTANT
+        FLOAT_CONSTANT,
+        //declareList for chaining multiple identifiers from one declare_list
+        DECLARE_LIST
     };
 
     // The data stored in the node
@@ -22,8 +24,11 @@ public:
     };
 
     // Constructor
-    sNode(Label l, Content c, sNode* left_child = nullptr, sNode* right_child = nullptr);
+    sNode(Label l, Content c, sNode* left_child, sNode* right_child);
 
+    sNode();
+    //this function will be used for declare_list when you dont want to add content but just want to chain multiple delcare lists together
+    static sNode* mkSnode(Label l, sNode* left_child, sNode* right_child);
     
 
     // Factory function

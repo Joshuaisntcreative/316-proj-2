@@ -1,2 +1,1 @@
-int i,j,k
-float x = 5
+int a, b=3, c
