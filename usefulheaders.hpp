@@ -44,16 +44,21 @@ void getNonBlank();
 
 
 //will be used by the symboltable later on
-enum DataType {
+enum Datatype {
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_UNKNOWN   // useful for errors
 };
+
+union Value{
+    int i;
+    float f;
+};
 //this will hold every identifier's important symboltable info
 struct SymbolInfo{
-    DataType type = TYPE_FLOAT;
-    float value = 0.0;
-    bool initialized = true;
+    Datatype type;
+    Value value;
+    bool initialized;
 };
 extern std::unordered_map<std::string, SymbolInfo> symbolTable;
 extern std::string lexeme_s;

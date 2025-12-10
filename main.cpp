@@ -22,47 +22,7 @@ std::unordered_map<std::string, SymbolInfo> symbolTable;
 void printSymbolTable(std::unordered_map<std::string, SymbolInfo> map);
 std::string name;
 // used as a placeholder until I can find something more concrete
-DataType currDatatype;
-
-
-void printAST_ascii(const sNode* node, const std::string& prefix = "", bool isLeft = true)
-{
-    if (!node) return;
-
-    // Print this node
-    std::cout << prefix
-              << (isLeft ? "├── " : "└── ");
-
-    switch (node->tag) {
-        case sNode::OP:
-            std::cout << "OP(" << node->data.op << ")";
-            break;
-        case sNode::INT_CONSTANT:
-            std::cout << "INT(" << node->data.integer_constant << ")";
-            break;
-        case sNode::FLOAT_CONSTANT:
-            std::cout << "FLOAT(" << node->data.float_constant << ")";
-            break;
-        case sNode::IDENTIFIER:
-            std::cout << "ID(" << node->data.identifier << ")";
-            break;
-        case sNode::DECLARE_LIST:
-            std::cout << "DECLARE_LIST";
-            break;
-        default:
-            std::cout << "UNKNOWN";
-    }
-    std::cout << "\n";
-
-    // Recurse into children
-    if (node->left)
-        printAST_ascii(node->left, prefix + (isLeft ? "│   " : "    "), true);
-
-    if (node->right)
-        printAST_ascii(node->right, prefix + (isLeft ? "│   " : "    "), false);
-}
-    
-
+Datatype currDatatype;
 
 /******************************************************/
 /* main driver */
@@ -77,7 +37,6 @@ int main()
         lex();
         root = program();
     }
-    printAST_ascii(root);
 }
 sNode *program()
 {
@@ -269,58 +228,45 @@ sNode *factor()
 //declare_list -> (int|float) <ident> [=<expr>]{,<ident>[=<expr>]}
 sNode* declare_list()
 {
-    sNode *lhs = nullptr;
-    sNode *rhs = nullptr;
-    sNode::Content c;
-
     // Determine type
     if (nextToken == INT_KEYWORD)
         currDatatype = TYPE_INT;
     else if (nextToken == FLOAT_KEYWORD)
         currDatatype = TYPE_FLOAT;
     else {
-        std::cout << "Program error: expected int or float.\n";
+        std::cout << "Error: expected type specifier\n";
         return nullptr;
     }
+    lex();  // consume int/float
 
-    lex();  // consume int|float keyword
-
-    // First identifier -----------------------------
+    // First identifier
     if (nextToken != IDENT) {
-        std::cout << "Error: identifier must follow type.\n";
+        std::cout << "Error: expected identifier after type\n";
         return nullptr;
     }
 
-    c.identifier = lexeme_s[0];
-    lhs = sNode::mkSnode(sNode::IDENTIFIER, c, nullptr, nullptr);
+    // Process the first declaration
+    process_single_declaration(currDatatype);
 
-    lex(); // consume identifier
+    lex(); // move past IDENT or its constant initializer
 
-    // Additional identifiers separated by commas ----
+    // Handle comma-separated list
     while (nextToken == COMMA)
     {
-        lex(); // consume comma
+        lex();  // skip comma
 
         if (nextToken != IDENT) {
             std::cout << "Error: expected identifier after comma\n";
-            return lhs;
+            return nullptr;
         }
 
-        c.identifier = lexeme_s[0];
-        rhs = sNode::mkSnode(sNode::IDENTIFIER, c, nullptr, nullptr);
-        lex(); // consume identifier
+        process_single_declaration(currDatatype);
 
-        // Build DECLARE_LIST node
-        sNode::Content empty;
-        lhs = sNode::mkSnode(
-            sNode::DECLARE_LIST,
-            empty,
-            lhs,
-            rhs
-        );
+        lex();
     }
 
-    return lhs;
+    // This rule does not contribute to AST, return a dummy node or nullptr
+    return nullptr;
 }
 //<assign_list> -> {<ident>=}<assign>
 // need to figure out how to handle cases for a = b = ..., like what should the symbol table hold?
@@ -345,10 +291,70 @@ sNode* assign_list()
     return assign();  // simple assignment
 }
 
-void printSymbolTable(std::unordered_map<std::string, SymbolInfo> map)
+void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table)
 {
-    for (auto i : map)
+    for (const auto& entry : table)
     {
-        std::cout << i.first << " is the name of the identifier and " << i.second.type << " is the type of variable " << i.second.value << " is the value inside" << std::endl;
+        const std::string& name = entry.first;
+        const SymbolInfo& info = entry.second;
+
+        std::cout << name << "  |  ";
+
+        switch (info.type)
+        {
+            case TYPE_INT:
+                std::cout << "INT   ";
+                if (info.initialized)
+                    std::cout << info.value.i;
+                else
+                    std::cout << "(uninitialized)";
+                break;
+
+            case TYPE_FLOAT:
+                std::cout << "FLOAT ";
+                if (info.initialized)
+                    std::cout << info.value.f;
+                else
+                    std::cout << "(uninitialized)";
+                break;
+
+            default:
+                std::cout << "UNKNOWN";
+        }
+
+        std::cout << std::endl;
+    }
+}
+
+void process_single_declaration(Datatype type)
+{
+    std::string name = lexeme_s;  // IDENT name
+
+    // Insert into symbol table with default value
+    symbolTable[name].type = type;
+
+    lex(); // consume IDENT
+
+    // Optional initialization: IDENT = const_expr
+    if (nextToken == ASSIGN_OP)
+    {
+        lex(); // consume '='
+
+        if (nextToken == INT_CONST)
+        {
+            symbolTable[name].value.i = std::stoi(lexeme_s);
+            symbolTable[name].initialized = true;
+        }
+        else if (nextToken == FLOAT_CONST)
+        {
+            symbolTable[name].value.f = std::stof(lexeme_s);
+            symbolTable[name].initialized = true;
+        }
+        else {
+            std::cout << "Error: initializer must be constant expression\n";
+        }
+
+        // After storing, consume the constant token
+        lex();
     }
 }

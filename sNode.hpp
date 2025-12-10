@@ -9,8 +9,6 @@ public:
         INT_CONSTANT,
         IDENTIFIER,
         FLOAT_CONSTANT,
-        //declareList for chaining multiple identifiers from one declare_list
-        DECLARE_LIST
     };
 
     // The data stored in the node
