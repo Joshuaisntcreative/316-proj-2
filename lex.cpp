@@ -13,6 +13,7 @@ int lexLen;
 int token;
 int nextToken;
 int integerLiteral;
+float floatLiteral;
 FILE *in_fp, *fopen();
 std::string lexeme_s;
 /*****************************************************/
@@ -157,7 +158,25 @@ int lex()
             addChar();
             getChar();
         }
-        integerLiteral = atoi(lexeme);
+        // support for float constants
+
+        if (nextChar == '.')
+        {
+            addChar();
+            getChar();
+            while (charClass == DIGIT)
+            {
+                addChar();
+                getChar();
+            }
+            floatLiteral = atof(lexeme);
+            nextToken = FLOAT_CONST;
+        }
+        else
+        {
+            integerLiteral = atoi(lexeme);
+            nextToken = INT_CONST;
+        }
         break;
     /* Parentheses and operators */
     case UNKNOWN:

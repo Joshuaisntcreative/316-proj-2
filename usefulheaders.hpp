@@ -63,4 +63,5 @@ struct SymbolInfo{
 extern std::unordered_map<std::string, SymbolInfo> symbolTable;
 extern std::string lexeme_s;
 extern int integerLiteral;
+extern float floatLiteral;
 #endif

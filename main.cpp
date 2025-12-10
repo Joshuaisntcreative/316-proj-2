@@ -19,10 +19,13 @@ sNode *program();
 sNode *root;
 struct SymbolInfo;
 std::unordered_map<std::string, SymbolInfo> symbolTable;
-void printSymbolTable(std::unordered_map<std::string, SymbolInfo> map);
+void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table);
+void process_single_declaration(Datatype type);
+//the literal name of the identifier to be inserted into the symbol table
 std::string name;
 // used as a placeholder until I can find something more concrete
 Datatype currDatatype;
+
 
 /******************************************************/
 /* main driver */
@@ -37,6 +40,7 @@ int main()
         lex();
         root = program();
     }
+    printSymbolTable(symbolTable);
 }
 sNode *program()
 {
@@ -237,7 +241,8 @@ sNode* declare_list()
         std::cout << "Error: expected type specifier\n";
         return nullptr;
     }
-    lex();  // consume int/float
+
+    lex();  // consume int|float
 
     // First identifier
     if (nextToken != IDENT) {
@@ -245,15 +250,13 @@ sNode* declare_list()
         return nullptr;
     }
 
-    // Process the first declaration
+    // Process the first declaration (this consumes IDENT and optional initializer)
     process_single_declaration(currDatatype);
 
-    lex(); // move past IDENT or its constant initializer
-
-    // Handle comma-separated list
+    // Now handle comma-separated further declarations.
     while (nextToken == COMMA)
     {
-        lex();  // skip comma
+        lex();  // consume comma
 
         if (nextToken != IDENT) {
             std::cout << "Error: expected identifier after comma\n";
@@ -261,11 +264,9 @@ sNode* declare_list()
         }
 
         process_single_declaration(currDatatype);
-
-        lex();
     }
 
-    // This rule does not contribute to AST, return a dummy node or nullptr
+    // Declaration list doesn't produce AST nodes in your design
     return nullptr;
 }
 //<assign_list> -> {<ident>=}<assign>
@@ -295,10 +296,10 @@ void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table)
 {
     for (const auto& entry : table)
     {
-        const std::string& name = entry.first;
+        const std::string& lname = entry.first;
         const SymbolInfo& info = entry.second;
 
-        std::cout << name << "  |  ";
+        std::cout << lname << "  |  ";
 
         switch (info.type)
         {
@@ -328,33 +329,54 @@ void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table)
 
 void process_single_declaration(Datatype type)
 {
-    std::string name = lexeme_s;  // IDENT name
+    std::string name = lexeme_s;  // full identifier name
 
-    // Insert into symbol table with default value
+    // Insert or update symbol table entry
     symbolTable[name].type = type;
+    symbolTable[name].initialized = false;
 
     lex(); // consume IDENT
 
-    // Optional initialization: IDENT = const_expr
+    // Optional initializer
     if (nextToken == ASSIGN_OP)
     {
         lex(); // consume '='
 
-        if (nextToken == INT_CONST)
+        // ---- INT variable initialization ----
+        if (type == TYPE_INT)
         {
-            symbolTable[name].value.i = std::stoi(lexeme_s);
-            symbolTable[name].initialized = true;
+            if (nextToken == INT_CONST)
+            {
+                symbolTable[name].value.i = integerLiteral;
+                symbolTable[name].initialized = true;
+            }
+            else
+            {
+                std::cout << "Type error: cannot assign non-int constant to int variable '"
+                          << name << "'\n";
+            }
         }
-        else if (nextToken == FLOAT_CONST)
+        // ---- FLOAT variable initialization ----
+        else if (type == TYPE_FLOAT)
         {
-            symbolTable[name].value.f = std::stof(lexeme_s);
-            symbolTable[name].initialized = true;
-        }
-        else {
-            std::cout << "Error: initializer must be constant expression\n";
+            if (nextToken == FLOAT_CONST)
+            {
+                symbolTable[name].value.f = floatLiteral;
+                symbolTable[name].initialized = true;
+            }
+            else if (nextToken == INT_CONST)
+            {
+                // Optional: allow int -> float promotion
+                symbolTable[name].value.f = std::stof(lexeme_s);
+                symbolTable[name].initialized = true;
+            }
+            else
+            {
+                std::cout << "Type error: invalid constant for float variable '"
+                          << name << "'\n";
+            }
         }
 
-        // After storing, consume the constant token
-        lex();
+        lex(); // consume constant
     }
 }
