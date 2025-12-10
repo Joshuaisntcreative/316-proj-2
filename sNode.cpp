@@ -7,11 +7,16 @@ sNode::sNode(Label l, Content c, sNode* left_child, sNode* right_child)
     data = c;
     left = left_child;
     right = right_child;
+    expectedType = TYPE_UNKNOWN;
+    computedType = TYPE_UNKNOWN;
 }
 
 sNode::sNode()
 {
-    
+    left = nullptr;
+    right = nullptr;
+    expectedType = TYPE_UNKNOWN;
+    computedType = TYPE_UNKNOWN;
 }
 sNode* sNode::mkSnode(Label l, sNode* left_child, sNode* right_child)
 {

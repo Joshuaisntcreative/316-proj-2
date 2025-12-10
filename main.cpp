@@ -20,6 +20,14 @@ EBNF GRAMMAR
 <term> -> <factor> {(* | /) <factor>)
 <factor> -> id | int_constant | ( <expr> ) | float_const
 */
+
+
+/*
+
+Sematic attribute grammar rules
+
+
+*/
 sNode *assign();
 sNode *assign_list();
 sNode *expr();
@@ -34,6 +42,9 @@ void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table);
 void process_single_declaration(Datatype type);
 void printTree(sNode* node, int depth = 0);
 static void printIndent(int depth);
+std::string typeToString(Datatype t);
+Datatype getVariableType(char id);
+void computeTypes(sNode* node);
 //the literal name of the identifier to be inserted into the symbol table
 std::string name;
 // used as a placeholder until I can find something more concrete
@@ -53,6 +64,7 @@ int main()
         lex();
         root = program();
     }
+    computeTypes(root);
     //printSymbolTable(symbolTable);
     printTree(root);
 }
@@ -398,35 +410,110 @@ static void printIndent(int depth) {
 }
 
 void printTree(sNode* node, int depth) {
-    if (node == nullptr)
-        return;
+    if (!node) return;
 
-    printIndent(depth);
+    // Indentation
+    for (int i = 0; i < depth; ++i)
+        std::cout << "  ";
 
-    // Print node based on its label
-    switch (node->tag) {
-    case sNode::IDENTIFIER:
-        std::cout << "IDENTIFIER: " << node->data.identifier << "\n";
-        break;
+    // Print node info
+    switch(node->tag) {
+        case sNode::IDENTIFIER:
+            std::cout << "IDENTIFIER: " << node->data.identifier;
+            break;
 
-    case sNode::INT_CONSTANT:
-        std::cout << "INT_CONSTANT: " << node->data.integer_constant << "\n";
-        break;
+        case sNode::INT_CONSTANT:
+            std::cout << "INT_CONSTANT: " << node->data.integer_constant;
+            break;
 
-    case sNode::FLOAT_CONSTANT:
-        std::cout << "FLOAT_CONSTANT: " << node->data.float_constant << "\n";
-        break;
+        case sNode::FLOAT_CONSTANT:
+            std::cout << "FLOAT_CONSTANT: " << node->data.float_constant;
+            break;
 
-    case sNode::OP:
-        std::cout << "OP: " << node->data.op << "\n";
-        break;
+        case sNode::OP:
+            std::cout << "OP: " << node->data.op;
+            break;
 
-    default:
-        std::cout << "UNKNOWN NODE\n";
-        break;
+        default:
+            std::cout << "UNKNOWN NODE";
     }
 
+    // Print computed and expected types
+    std::cout << " [computed: " << typeToString(node->computedType)
+              << ", expected: " << typeToString(node->expectedType) << "]"
+              << std::endl;
+
     // Recurse to children
-    printTree(node->left,  depth + 1);
+    printTree(node->left, depth + 1);
     printTree(node->right, depth + 1);
+}
+
+void computeTypes(sNode* node) {
+    if (!node) return;
+
+    // Post-order traversal
+    computeTypes(node->left);
+    computeTypes(node->right);
+
+    switch(node->tag) {
+        case sNode::INT_CONSTANT:
+            node->computedType = TYPE_INT;
+            node->expectedType = TYPE_INT;
+            break;
+
+        case sNode::FLOAT_CONSTANT:
+            node->computedType = TYPE_FLOAT;
+            node->expectedType = TYPE_FLOAT;
+            break;
+
+        case sNode::IDENTIFIER:
+            node->computedType = getVariableType(node->data.identifier); // returns Datatype
+            node->expectedType = node->computedType;
+            break;
+
+        case sNode::OP:
+            if (node->data.op == '+' || node->data.op == '-' ||
+                node->data.op == '*' || node->data.op == '/') {
+                // Binary arithmetic operators
+                if (node->left->computedType == TYPE_FLOAT ||
+                    node->right->computedType == TYPE_FLOAT)
+                    node->computedType = TYPE_FLOAT;
+                else
+                    node->computedType = TYPE_INT;
+
+                node->expectedType = node->computedType;
+            } 
+            else if (node->data.op == '=') {
+                // Assignment
+                node->expectedType = node->left->computedType;  // LHS type
+                node->computedType = node->right->computedType; // RHS type
+
+                if (node->left->computedType != node->right->computedType) {
+                    std::cout << "Type mismatch in assignment: "
+                              << node->left->data.identifier << std::endl;
+                }
+            }
+            break;
+
+        default:
+            node->computedType = TYPE_UNKNOWN;
+            node->expectedType = TYPE_UNKNOWN;
+            break;
+    }
+}
+
+Datatype getVariableType(char id) {
+    std::string name(1, id);  // convert char to string
+    if (symbolTable.find(name) != symbolTable.end())
+        return symbolTable[name].type;
+    return TYPE_UNKNOWN;
+}
+
+// Helper to convert Type enum to string
+std::string typeToString(Datatype t) {
+    switch(t) {
+        case TYPE_INT: return "INT";
+        case TYPE_FLOAT: return "FLOAT";
+        default: return "UNKNOWN";
+    }
 }

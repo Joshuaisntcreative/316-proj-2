@@ -1,6 +1,7 @@
 #ifndef SNODE_H_
 #define SNODE_H_
 #include <string>
+#include "usefulheaders.hpp"
 class sNode
 {
 public:
@@ -40,6 +41,9 @@ public:
     Content data;          // holds the value
     sNode* left;           // left child
     sNode* right;          // right child
+
+    Datatype computedType;
+    Datatype expectedType;
 };
 
 #endif // SNODE_H_
