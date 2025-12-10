@@ -42,39 +42,31 @@ int main()
     }
     printSymbolTable(symbolTable);
 }
-sNode *program()
-{
 
+//<program> -> <declare_list>{<declare_list>|<assign_list>}
+sNode* program()
+{
     sNode* first = nullptr;
     sNode* last = nullptr;
 
-    if(nextToken == INT_KEYWORD || nextToken == FLOAT_KEYWORD)
+    // First, process declarations if present
+    while (nextToken == INT_KEYWORD || nextToken == FLOAT_KEYWORD)
     {
-        first = declare_list();
-        last = first;
+        declare_list(); // fills symbol table, returns nullptr
+        // no AST nodes to link
     }
-    else{
-        std::cout << "Program must start with declareList" << std::endl;
-    }
-    lex();
 
-   while (nextToken == INT_KEYWORD || nextToken == FLOAT_KEYWORD || nextToken == IDENT)
-   {
-    sNode* nextNode = nullptr;
-
-    if(nextToken == INT_KEYWORD || nextToken == FLOAT_KEYWORD)
+    // Process assignments if present
+    while (nextToken == IDENT)
     {
-        nextNode = declare_list();
-    }
-    else{
-        nextNode = assign_list();
+        //optionalassignList
+        sNode* nextNode = assign_list();
+        if (!first) first = nextNode;  // first assignment becomes AST root, the (!first means that if first is null initially, then we set first to the first assign_list parse aka the nextNode,)
+        if (last) last->right = nextNode; //continues the chain 
+        last = nextNode;
     }
 
-    last -> right = nextNode;
-    last = nextNode;
-    //lex();
-   }
-   return first;
+    return first; // AST only contains assignment nodes
 }
 
 /* assign
@@ -294,6 +286,8 @@ sNode* assign_list()
 
 void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table)
 {
+    std::cout << "Name | Type | Value" << std::endl;
+    std::cout << "----------------------" <<std::endl;
     for (const auto& entry : table)
     {
         const std::string& lname = entry.first;

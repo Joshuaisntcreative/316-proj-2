@@ -57,6 +57,8 @@ union Value{
 //this will hold every identifier's important symboltable info
 struct SymbolInfo{
     Datatype type;
+    Datatype expectedType;
+    Datatype computedType;
     Value value;
     bool initialized;
 };

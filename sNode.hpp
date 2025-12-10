@@ -21,6 +21,8 @@ public:
         Content() {}   // Needed because union members are non-trivial
     };
 
+
+
     // Constructor
     sNode(Label l, Content c, sNode* left_child, sNode* right_child);
 

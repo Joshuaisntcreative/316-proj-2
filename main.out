@@ -1,3 +1,5 @@
-c  |  INT   3
-b  |  INT   (uninitialized)
-a  |  INT   5
+Name | Type | Value
+----------------------
+y  |  FLOAT 12.5
+j  |  INT   10
+i  |  INT   5
