@@ -28,4 +28,3 @@ sNode* sNode::mkSnode(Label l, Content c, sNode* left_child, sNode* right_child)
     node -> right = right_child;
     return node;
 }
-

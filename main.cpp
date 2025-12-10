@@ -59,10 +59,9 @@ sNode* program()
     // Process assignments if present
     while (nextToken == IDENT)
     {
-        //optionalassignList
         sNode* nextNode = assign_list();
-        if (!first) first = nextNode;  // first assignment becomes AST root, the (!first means that if first is null initially, then we set first to the first assign_list parse aka the nextNode,)
-        if (last) last->right = nextNode; //continues the chain 
+        if (!first) first = nextNode;  // first assignment becomes AST root
+        if (last) last->right = nextNode;
         last = nextNode;
     }
 
