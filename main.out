@@ -1,5 +1,7 @@
 Name | Type | Value
 ----------------------
-y  |  FLOAT 12.5
-j  |  INT   10
-i  |  INT   5
+x  |  FLOAT 10.5
+k  |  INT   (uninitialized)
+y  |  FLOAT (uninitialized)
+j  |  INT   8
+i  |  INT   7

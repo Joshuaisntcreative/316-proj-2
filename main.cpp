@@ -276,11 +276,12 @@ sNode* assign_list()
     {
         lex();
         sNode* rhs = assign_list();  // recursively parse the RHS
-        sNode::Content opContent; opContent.op = '=';
+        sNode::Content opContent;
+        opContent.op = '=';
         return sNode::mkSnode(sNode::OP, opContent, lhs, rhs);
     }
 
-    return assign();  // simple assignment
+    return expr();  // simple assignment
 }
 
 void printSymbolTable(const std::unordered_map<std::string, SymbolInfo>& table)

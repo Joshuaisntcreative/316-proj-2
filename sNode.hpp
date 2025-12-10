@@ -1,5 +1,6 @@
 #ifndef SNODE_H_
 #define SNODE_H_
+#include <string>
 class sNode
 {
 public:
