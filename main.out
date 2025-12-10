@@ -1,7 +1,11 @@
-Name | Type | Value
-----------------------
-x  |  FLOAT 10.5
-k  |  INT   (uninitialized)
-y  |  FLOAT (uninitialized)
-j  |  INT   8
-i  |  INT   7
+OP: =
+  IDENTIFIER: y
+  OP: =
+    IDENTIFIER: k
+    OP: /
+      OP: +
+        IDENTIFIER: i
+        IDENTIFIER: j
+      OP: -
+        IDENTIFIER: x
+        FLOAT_CONSTANT: 6.8
