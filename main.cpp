@@ -9,6 +9,17 @@
 
 // I split the syntax analyser and the lexical analyser into 2 files for clarity sake, my monitor is small so I can't keep scrolling between the lexical analyser and the syntax analyser on one file and I added a header file just to safeguard all the necessary tokens for this
 
+
+
+/*
+EBNF GRAMMAR
+<program> -> <declare_list>{<declare_list>|<assign_list>}
+<declare_list> -> (int|float) <ident> [=<const_expr>]{,<ident>[=<const_expr>]
+<assign_list> -> {<ident>=}<expr>
+<expr> -> <term> {(+ | -) <term>}
+<term> -> <factor> {(* | /) <factor>)
+<factor> -> id | int_constant | ( <expr> ) | float_const
+*/
 sNode *assign();
 sNode *assign_list();
 sNode *expr();
