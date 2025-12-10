@@ -62,6 +62,14 @@ struct SymbolInfo{
     Value value;
     bool initialized;
 };
+
+enum StackValueType{INT_TYPE, FLOAT_TYPE};
+
+struct StackValue{
+    StackValueType type;
+    int i;
+    float f;
+};
 extern std::unordered_map<std::string, SymbolInfo> symbolTable;
 extern std::string lexeme_s;
 extern int integerLiteral;

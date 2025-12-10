@@ -1,12 +1,2 @@
 Type mismatch in assignment: k
-OP: = [computed: FLOAT, expected: FLOAT]
-  IDENTIFIER: y [computed: FLOAT, expected: FLOAT]
-  OP: = [computed: FLOAT, expected: INT]
-    IDENTIFIER: k [computed: INT, expected: INT]
-    OP: / [computed: FLOAT, expected: FLOAT]
-      OP: + [computed: INT, expected: INT]
-        IDENTIFIER: i [computed: INT, expected: INT]
-        IDENTIFIER: j [computed: INT, expected: INT]
-      OP: - [computed: FLOAT, expected: FLOAT]
-        IDENTIFIER: x [computed: FLOAT, expected: FLOAT]
-        FLOAT_CONSTANT: 6.8 [computed: FLOAT, expected: FLOAT]
+y k i j + x 6.8 - / = = 
