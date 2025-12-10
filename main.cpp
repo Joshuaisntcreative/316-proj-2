@@ -21,10 +21,17 @@ EBNF GRAMMAR
 */
 
 /*
+testCase 1 
 
-Sematic attribute grammar rules
+int i = 7, j = 8, k
+float y, x = 10.5
+y = k = (i+j)/(x-6.8)
 
 
+testCase 2 
+int a = 10, b = 20, c = 30
+int d
+d = b * (c*(a+b))
 */
 sNode *assign();
 sNode *assign_list();
@@ -44,6 +51,7 @@ std::string typeToString(Datatype t);
 Datatype getVariableType(char id);
 void computeTypes(sNode *node);
 void generatePostfix(sNode* node);
+void evaluateAST(sNode* node, Stack& stack);
 // the literal name of the identifier to be inserted into the symbol table
 std::string name;
 // used as a placeholder until I can find something more concrete
@@ -52,16 +60,16 @@ Datatype currDatatype;
 
 
 //Intermediate language code functions 
-void ftoi();
-void itof();
-void iadd();
-void fadd();
-void fmult();
-void imult();
-void fdiv();
-void idiv();
-void isub();
-void fsub();
+void ftoi(Stack& stack);
+void itof(Stack& stack);
+void iadd(Stack& stack);
+void fadd(Stack& stack);
+void imult(Stack& stack);
+void fmult(Stack& stack);
+void idiv(Stack& stack);
+void fdiv(Stack& stack);
+void isub(Stack& stack);
+void fsub(Stack& stack);
 
 /******************************************************/
 /* main driver */
@@ -79,7 +87,10 @@ int main()
     computeTypes(root);
     // printSymbolTable(symbolTable);
     //printTree(root);
-    generatePostfix(root);
+    //generatePostfix(root);
+    Stack stack;
+    evaluateAST(root,stack);
+    printSymbolTable(symbolTable);
 }
 
 //<program> -> <declare_list>{<declare_list>|<assign_list>}
@@ -581,4 +592,258 @@ void generatePostfix(sNode* node) {
             std::cout << node->data.op << " ";
             break;
     }
+}
+void evaluateAST(sNode* node, Stack& stack) {
+    if (!node) return;
+
+    // Post-order traversal
+    evaluateAST(node->left, stack);
+    evaluateAST(node->right, stack);
+
+    switch(node->tag) {
+
+        // ---- Leaf nodes ----
+        case sNode::INT_CONSTANT: {
+            StackValue v;
+            v.type = INT_TYPE;
+            v.i = node->data.integer_constant;
+            stack.push(v);
+            std::cout << "PUSH_INT " << v.i << std::endl;
+            break;
+        }
+
+        case sNode::FLOAT_CONSTANT: {
+            StackValue v;
+            v.type = FLOAT_TYPE;
+            v.f = node->data.float_constant;
+            stack.push(v);
+            std::cout << "PUSH_FLOAT " << v.f << std::endl;
+            break;
+        }
+
+        case sNode::IDENTIFIER: {
+            std::string name(1, node->data.identifier);
+            auto& info = symbolTable[name];
+            StackValue v;
+            if (info.type == TYPE_INT) {
+                v.type = INT_TYPE;
+                v.i = info.value.i;
+                std::cout << "PUSH_VAR_INT " << name << std::endl;
+            } else {
+                v.type = FLOAT_TYPE;
+                v.f = info.value.f;
+                std::cout << "PUSH_VAR_FLOAT " << name << std::endl;
+            }
+            stack.push(v);
+            break;
+        }
+
+        // ---- Operators ----
+        case sNode::OP: {
+            char op = node->data.op;
+
+            if (op == '=') {
+                // Right-hand side
+                StackValue rhs = stack.pop();
+
+                // Type conversion if needed
+                if (rhs.type == INT_TYPE && node->left->computedType == TYPE_FLOAT) {
+                    std::cout << "ITOF" << std::endl;
+                    stack.push(rhs);
+                    itof(stack);
+                    rhs = stack.pop();
+                } else if (rhs.type == FLOAT_TYPE && node->left->computedType == TYPE_INT) {
+                    std::cout << "FTOI" << std::endl;
+                    stack.push(rhs);
+                    ftoi(stack);
+                    rhs = stack.pop();
+                }
+
+                // Assign to variable
+                std::string varName(1, node->left->data.identifier);
+                if (rhs.type == INT_TYPE) {
+                    symbolTable[varName].value.i = rhs.i;
+                    symbolTable[varName].initialized = true;
+                } else {
+                    symbolTable[varName].value.f = rhs.f;
+                    symbolTable[varName].initialized = true;
+                }
+
+                std::cout << "STORE " << varName << std::endl;
+                stack.push(rhs);  // optional
+            } 
+            else {
+                // Arithmetic operations
+                StackValue right = stack.pop();
+                StackValue left = stack.pop();
+
+                // Type promotion
+                if (left.type == INT_TYPE && right.type == FLOAT_TYPE) {
+                    std::cout << "ITOF" << std::endl;
+                    stack.push(left);
+                    itof(stack);
+                    left = stack.pop();
+                } else if (left.type == FLOAT_TYPE && right.type == INT_TYPE) {
+                    std::cout << "ITOF" << std::endl;
+                    stack.push(right);
+                    itof(stack);
+                    right = stack.pop();
+                }
+
+                stack.push(left);
+                stack.push(right);
+
+                // Emit IL arithmetic
+                switch(op) {
+                    case '+':
+                        if (node->computedType == TYPE_FLOAT) {
+                            fadd(stack);
+                            std::cout << "FADD" << std::endl;
+                        } else {
+                            iadd(stack);
+                            std::cout << "IADD" << std::endl;
+                        }
+                        break;
+                    case '-':
+                        if (node->computedType == TYPE_FLOAT) {
+                            fsub(stack);
+                            std::cout << "FSUB" << std::endl;
+                        } else {
+                            isub(stack);
+                            std::cout << "ISUB" << std::endl;
+                        }
+                        break;
+                    case '*':
+                        if (node->computedType == TYPE_FLOAT) {
+                            fmult(stack);
+                            std::cout << "FMULT" << std::endl;
+                        } else {
+                            imult(stack);
+                            std::cout << "IMULT" << std::endl;
+                        }
+                        break;
+                    case '/':
+                        if (node->computedType == TYPE_FLOAT) {
+                            fdiv(stack);
+                            std::cout << "FDIV" << std::endl;
+                        } else {
+                            idiv(stack);
+                            std::cout << "IDIV" << std::endl;
+                        }
+                        break;
+                }
+            }
+            break;
+        }
+
+        default:
+            std::cerr << "Unknown node type in evaluation" << std::endl;
+            break;
+    }
+}
+
+// ----- Type conversion -----
+void itof(Stack& stack) {
+    StackValue v = stack.pop();
+    if (v.type != INT_TYPE) {
+        std::cerr << "itof error: top of stack is not int\n";
+        return;
+    }
+    StackValue result;
+    result.type = FLOAT_TYPE;
+    result.f = static_cast<float>(v.i);
+    stack.push(result);
+}
+
+void ftoi(Stack& stack) {
+    StackValue v = stack.pop();
+    if (v.type != FLOAT_TYPE) {
+        std::cerr << "ftoi error: top of stack is not float\n";
+        return;
+    }
+    StackValue result;
+    result.type = INT_TYPE;
+    result.i = static_cast<int>(v.f);
+    stack.push(result);
+}
+
+// ----- Arithmetic operations -----
+void iadd(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = INT_TYPE;
+    result.i = a.i + b.i;
+    stack.push(result);
+}
+
+void fadd(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = FLOAT_TYPE;
+    result.f = a.f + b.f;
+    stack.push(result);
+}
+
+void isub(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = INT_TYPE;
+    result.i = a.i - b.i;
+    stack.push(result);
+}
+
+void fsub(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = FLOAT_TYPE;
+    result.f = a.f - b.f;
+    stack.push(result);
+}
+
+void imult(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = INT_TYPE;
+    result.i = a.i * b.i;
+    stack.push(result);
+}
+
+void fmult(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    StackValue result;
+    result.type = FLOAT_TYPE;
+    result.f = a.f * b.f;
+    stack.push(result);
+}
+
+void idiv(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    if (b.i == 0) {
+        std::cerr << "Division by zero (int)!\n";
+        return;
+    }
+    StackValue result;
+    result.type = INT_TYPE;
+    result.i = a.i / b.i;
+    stack.push(result);
+}
+
+void fdiv(Stack& stack) {
+    StackValue b = stack.pop();
+    StackValue a = stack.pop();
+    if (b.f == 0.0f) {
+        std::cerr << "Division by zero (float)!\n";
+        return;
+    }
+    StackValue result;
+    result.type = FLOAT_TYPE;
+    result.f = a.f / b.f;
+    stack.push(result);
 }
