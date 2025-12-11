@@ -346,6 +346,8 @@ sNode *assign_list()
 
 void printSymbolTable(const std::unordered_map<std::string, SymbolInfo> &table)
 {
+    std::cout << "---------------------- " <<std::endl;
+    std::cout << "Symbol table Contents" <<std::endl;
     std::cout << "Name | Type | Value" << std::endl;
     std::cout << "----------------------" << std::endl;
     for (const auto &entry : table)
