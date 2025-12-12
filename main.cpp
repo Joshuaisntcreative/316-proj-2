@@ -83,12 +83,12 @@ int main()
         lex();
         root = program();
     }
-    //computeTypes(root);
+    computeTypes(root);
     // printSymbolTable(symbolTable);
-    printTree(root);
+    //printTree(root);
     //generatePostfix(root);
-    //Stack stack;
-    //evaluateAST(root,stack);
+    Stack stack;
+    evaluateAST(root,stack);
     printSymbolTable(symbolTable);
 }
 

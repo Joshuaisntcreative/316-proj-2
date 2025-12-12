@@ -1,20 +1,24 @@
-DEBUG: Factor received unexpected token: 23 with lexeme: *
-Error: unexpected token in factor
-OP: = [computed: UNKNOWN, expected: UNKNOWN]
-  IDENTIFIER: d [computed: UNKNOWN, expected: UNKNOWN]
-  OP: = [computed: UNKNOWN, expected: UNKNOWN]
-    IDENTIFIER: b [computed: UNKNOWN, expected: UNKNOWN]
-    OP: * [computed: UNKNOWN, expected: UNKNOWN]
-      OP: * [computed: UNKNOWN, expected: UNKNOWN]
-        IDENTIFIER: c [computed: UNKNOWN, expected: UNKNOWN]
-        OP: + [computed: UNKNOWN, expected: UNKNOWN]
-          IDENTIFIER: a [computed: UNKNOWN, expected: UNKNOWN]
-          IDENTIFIER: b [computed: UNKNOWN, expected: UNKNOWN]
+Type mismatch in assignment: k
+PUSH_VAR_FLOAT y
+PUSH_VAR_INT k
+PUSH_VAR_INT i
+PUSH_VAR_INT j
+IADD
+PUSH_VAR_FLOAT x
+PUSH_FLOAT 6.8
+FSUB
+ITOF
+FDIV
+FTOI
+STORE k
+ITOF
+STORE y
 ---------------------- 
 Symbol table Contents
 Name | Type | Value
 ----------------------
-c  |  INT   30
-b  |  INT   20
-d  |  INT   (uninitialized)
-a  |  INT   10
+x  |  FLOAT 10.5
+k  |  INT   4
+y  |  FLOAT 4
+j  |  INT   8
+i  |  INT   7
