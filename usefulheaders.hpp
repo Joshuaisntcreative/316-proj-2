@@ -38,10 +38,13 @@ extern FILE *in_fp;
 
 
 int lex();
+
 void getChar();
 void addChar();
 void getNonBlank();
-
+int peekChar();
+bool isNextTokenAssignment();
+#include <string.h>
 
 //will be used by the symboltable later on
 enum Datatype {

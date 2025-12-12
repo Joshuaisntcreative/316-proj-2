@@ -1,7 +1,9 @@
 #ifndef SNODE_H_
 #define SNODE_H_
+
 #include <string>
 #include "usefulheaders.hpp"
+
 class sNode
 {
 public:
@@ -14,33 +16,28 @@ public:
     };
 
     // The data stored in the node
-    union Content {
+    struct Content {
         char op;
         int integer_constant;
         float float_constant;
-        char identifier;
+        std::string identifier;  // <-- now a string
 
-        Content() {}   // Needed because union members are non-trivial
+        Content() : op(0), integer_constant(0), float_constant(0), identifier("") {}
     };
-
-
 
     // Constructor
     sNode(Label l, Content c, sNode* left_child, sNode* right_child);
-
     sNode();
-    //this function will be used for declare_list when you dont want to add content but just want to chain multiple delcare lists together
-    static sNode* mkSnode(Label l, sNode* left_child, sNode* right_child);
-    
 
-    // Factory function
+    // Factory functions
+    static sNode* mkSnode(Label l, sNode* left_child, sNode* right_child);
     static sNode* mkSnode(Label l, Content c, sNode* left_child, sNode* right_child);
 
 public:
-    Label tag;             // which kind of node this is
-    Content data;          // holds the value
-    sNode* left;           // left child
-    sNode* right;          // right child
+    Label tag;       // which kind of node this is
+    Content data;    // holds the value
+    sNode* left;     // left child
+    sNode* right;    // right child
 
     Datatype computedType;
     Datatype expectedType;
