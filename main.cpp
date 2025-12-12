@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <unordered_map>
 #include "usefulheaders.hpp"
-#include "sNode.hpp"
+//#include "sNode.hpp"
 #include "customstack.cpp"
 
 // ------------------------------------------------------------
@@ -30,6 +30,82 @@ int integerLiteral;
 float floatLiteral;
 FILE *in_fp;
 std::string lexeme_s;
+
+
+class sNode
+{
+public:
+    // Node type
+    enum Label {
+        OP,
+        INT_CONSTANT,
+        IDENTIFIER,
+        FLOAT_CONSTANT,
+    };
+
+    // Node data
+    struct Content {
+        char op;
+        int integer_constant;
+        float float_constant;
+        std::string identifier;
+
+        Content() : op(0), integer_constant(0), float_constant(0), identifier("") {}
+    };
+
+    // Constructors
+    sNode(Label l, Content c, sNode* left_child, sNode* right_child);
+    sNode();
+
+    // Factory functions
+    static sNode* mkSnode(Label l, sNode* left_child, sNode* right_child);
+    static sNode* mkSnode(Label l, Content c, sNode* left_child, sNode* right_child);
+
+public:
+    Label tag;
+    Content data;
+    sNode* left;
+    sNode* right;
+
+    Datatype computedType;
+    Datatype expectedType;
+};
+
+// -------------------- sNode implementations --------------------
+sNode::sNode(Label l, Content c, sNode* left_child, sNode* right_child)
+{
+    tag = l;
+    data = c;
+    left = left_child;
+    right = right_child;
+    expectedType = TYPE_UNKNOWN;
+    computedType = TYPE_UNKNOWN;
+}
+
+sNode::sNode()
+{
+    left = nullptr;
+    right = nullptr;
+    expectedType = TYPE_UNKNOWN;
+    computedType = TYPE_UNKNOWN;
+}
+
+sNode* sNode::mkSnode(Label l, sNode* left_child, sNode* right_child)
+{
+    Content placeHolder;
+    return mkSnode(l, placeHolder, left_child, right_child);
+}
+
+// Factory function
+sNode* sNode::mkSnode(Label l, Content c, sNode* left_child, sNode* right_child)
+{
+    sNode* node = new sNode();
+    node->tag = l;
+    node->data = c;
+    node->left = left_child;
+    node->right = right_child;
+    return node;
+}
 
 
 // ------------------------------------------------------------
@@ -169,11 +245,10 @@ int main()
         root = program(); // parse entire program
     }
 
-    //computeTypes(root);   // determine types for AST
+    computeTypes(root);   // determine types for AST
     // printSymbolTable(symbolTable);
     // printTree(root);
     // generatePostfix(root);
-
     Stack stack;
     evaluateAST(root, stack); // evaluate AST
     printSymbolTable(symbolTable); // show results

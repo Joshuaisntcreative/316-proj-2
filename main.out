@@ -1,3 +1,4 @@
+Type mismatch in assignment: k
 PUSH_VAR_FLOAT y
 PUSH_VAR_INT k
 PUSH_VAR_INT i
@@ -5,16 +6,19 @@ PUSH_VAR_INT j
 IADD
 PUSH_VAR_FLOAT x
 PUSH_FLOAT 6.8
-ISUB
-IDIV
+FSUB
+ITOF
+FDIV
+FTOI
 STORE k
+ITOF
 STORE y
 ---------------------- 
 Symbol table Contents
 Name | Type | Value
 ----------------------
 x  |  FLOAT 10.5
-k  |  INT   0
-y  |  FLOAT 0
+k  |  INT   4
+y  |  FLOAT 4
 j  |  INT   8
 i  |  INT   7
