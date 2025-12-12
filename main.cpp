@@ -803,7 +803,7 @@ void evaluateAST(sNode* node, Stack& stack) {
                     symbolTable[varName].initialized = true;
                 }
 
-                std::cout << "STORE " << varName << std::endl;
+                std::cout << "ASSIGN " << varName << std::endl;
                 stack.push(rhs);  // optional: push value back to stack
             } 
             else {
