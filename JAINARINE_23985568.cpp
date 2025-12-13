@@ -2,20 +2,97 @@
 // ------------------------------------------------------------
 // SYNTAX ANALYZER MAIN FILE
 // ------------------------------------------------------------
+// ------------------------------------------------------------
+//NOTE: ALL COMMENTED OUT FUNCTIONS WERE USED TO ENSURE THAT THE PROGRAM WAS PRINTING THE DESIRED OUTPUT DURING EACH PHASE OF COMPILATION,
+//THIS INCLUDES THE AST, AND POSTFIX FUNCTIONS
 
-// ------------------------------------------------------------
-// main.cpp (with lexer embedded)
-// ------------------------------------------------------------
+//I had built some of these classes separately to make the main function easier to read and debug so there may be some overlap
 
 #include <iostream>
 #include <stdio.h>
 #include <ctype.h>
 #include <string>
 #include <cstdlib>
+#include <fstream>
 #include <unordered_map>
-#include "usefulheaders.hpp"
+#define LETTER 0
+#define DIGIT 1
+#define UNKNOWN 99
+//used for the lexical analyser to handle multiple lines in the front.in file
+#define NEWLINE 120
+//Token codes
+
+// going to define the custom codes for the project after right paren to make it easier to understand
+#define INT_CONST 10
+#define IDENT 11
+#define FLOAT_CONST 12
+#define COMMA 13
+#define ASSIGN_OP 20
+#define ADD_OP 21
+#define SUB_OP 22
+#define MULT_OP 23
+#define DIV_OP 24
+#define POW_OP 26
+#define LEFT_PAREN 27
+#define RIGHT_PAREN 28
+
+
+//custom tokens codes for the project
+#define INT_KEYWORD 50
+#define FLOAT_KEYWORD 51
+
+
+#define EOF_TOKEN -1
+
+extern int nextToken;
+extern char lexeme[];
+extern FILE *in_fp;
+
+
+
+int lex();
+
+void getChar();
+void addChar();
+void getNonBlank();
+int peekChar();
+bool isNextTokenAssignment();
+#include <string.h>
+
+//will be used by the symboltable later on
+enum Datatype {
+    TYPE_INT,
+    TYPE_FLOAT,
+    TYPE_UNKNOWN   // useful for errors
+};
+
+union Value{
+    int i;
+    float f;
+};
+//this will hold every identifier's important symboltable info
+struct SymbolInfo{
+    Datatype type;
+    Datatype expectedType;
+    Datatype computedType;
+    Value value;
+    bool initialized;
+};
+
+enum StackValueType{INT_TYPE, FLOAT_TYPE};
+
+struct StackValue{
+    StackValueType type;
+    int i;
+    float f;
+};
+extern std::unordered_map<std::string, SymbolInfo> symbolTable;
+extern std::string lexeme_s;
+extern int integerLiteral;
+extern float floatLiteral;
+//#include "usefulheaders.hpp"
 //#include "sNode.hpp"
-#include "customstack.cpp"
+//#include "customstack.cpp"
 
 // ------------------------------------------------------------
 // Lexer globals
@@ -31,6 +108,47 @@ float floatLiteral;
 FILE *in_fp;
 std::string lexeme_s;
 
+
+class Stack {
+private:
+    StackValue data[100];
+    int topIndex;
+
+public:
+    Stack() : topIndex(-1) {}
+
+    // Push a StackValue
+    void push(StackValue v) {
+        if (topIndex < 99) {
+            data[++topIndex] = v;
+        } else {
+            // optional: handle overflow error
+        }
+    }
+
+    // Pop a StackValue
+    StackValue pop() {
+        if (topIndex >= 0) {
+            return data[topIndex--];
+        } else {
+            // optional: handle underflow error
+            StackValue dummy;
+            dummy.type = INT_TYPE;
+            dummy.i = 0;
+            return dummy;
+        }
+    }
+
+    // Peek at the top StackValue
+    StackValue top() const {
+        return data[topIndex];
+    }
+
+    // Check if empty
+    bool empty() const {
+        return topIndex == -1;
+    }
+};
 
 class sNode
 {
@@ -233,6 +351,15 @@ void fsub(Stack& stack);
 // ------------------------------------------------------------
 // MAIN FUNCTION
 // ------------------------------------------------------------
+
+//compile by running g++ JAINARINE_23985568.cpp -o main.exe
+//main.exe > main.out
+
+
+//URGENT-- FOR TEST CASE 2 the computedTypes function must be commented out for the code to print out the IL code, it doesn't work properly but I spent hours trying to figure out why,
+//I managed to narrow the issue down to how the assign_list interprets the expression after b * in the test case: (d = b * (c*(a+b))). I know this because when I go to run the print tree function
+//I see that the tree prints d = b as it should but fails after that so the issuelies within that interaction after assign_list reads all of the assignments, I'm sorry for not being able to debug this in time.
+
 int main()
 {
     // Open input file
@@ -572,47 +699,47 @@ static void printIndent(int depth)
         std::cout << "  ";
 }
 
-void printTree(sNode *node, int depth)
-{
-    if (!node)
-        return;
+// void printTree(sNode *node, int depth)
+// {
+//     if (!node)
+//         return;
 
-    // Indentation
-    for (int i = 0; i < depth; ++i)
-        std::cout << "  ";
+//     // Indentation
+//     for (int i = 0; i < depth; ++i)
+//         std::cout << "  ";
 
-    // Print node info
-    switch (node->tag)
-    {
-    case sNode::IDENTIFIER:
-        std::cout << "IDENTIFIER: " << node->data.identifier;
-        break;
+//     // Print node info
+//     switch (node->tag)
+//     {
+//     case sNode::IDENTIFIER:
+//         std::cout << "IDENTIFIER: " << node->data.identifier;
+//         break;
 
-    case sNode::INT_CONSTANT:
-        std::cout << "INT_CONSTANT: " << node->data.integer_constant;
-        break;
+//     case sNode::INT_CONSTANT:
+//         std::cout << "INT_CONSTANT: " << node->data.integer_constant;
+//         break;
 
-    case sNode::FLOAT_CONSTANT:
-        std::cout << "FLOAT_CONSTANT: " << node->data.float_constant;
-        break;
+//     case sNode::FLOAT_CONSTANT:
+//         std::cout << "FLOAT_CONSTANT: " << node->data.float_constant;
+//         break;
 
-    case sNode::OP:
-        std::cout << "OP: " << node->data.op;
-        break;
+//     case sNode::OP:
+//         std::cout << "OP: " << node->data.op;
+//         break;
 
-    default:
-        std::cout << "UNKNOWN NODE";
-    }
+//     default:
+//         std::cout << "UNKNOWN NODE";
+//     }
 
-    // Print computed and expected types
-    std::cout << " [computed: " << typeToString(node->computedType)
-              << ", expected: " << typeToString(node->expectedType) << "]"
-              << std::endl;
+//     // Print computed and expected types
+//     std::cout << " [computed: " << typeToString(node->computedType)
+//               << ", expected: " << typeToString(node->expectedType) << "]"
+//               << std::endl;
 
-    // Recurse to children
-    printTree(node->left, depth + 1);
-    printTree(node->right, depth + 1);
-}
+//     // Recurse to children
+//     printTree(node->left, depth + 1);
+//     printTree(node->right, depth + 1);
+// }
 
 void computeTypes(sNode *node)
 {
@@ -694,34 +821,34 @@ std::string typeToString(Datatype t)
     }
 }
 
-void generatePostfix(sNode* node) {
-    if (!node) return;
+// void generatePostfix(sNode* node) {
+//     if (!node) return;
 
-    // Left subtree
-    generatePostfix(node->left);
+//     // Left subtree
+//     generatePostfix(node->left);
 
-    // Right subtree
-    generatePostfix(node->right);
+//     // Right subtree
+//     generatePostfix(node->right);
 
-    // Print current node
-    switch (node->tag) {
-        case sNode::INT_CONSTANT:
-            std::cout << node->data.integer_constant << " ";
-            break;
+//     // Print current node
+//     switch (node->tag) {
+//         case sNode::INT_CONSTANT:
+//             std::cout << node->data.integer_constant << " ";
+//             break;
 
-        case sNode::FLOAT_CONSTANT:
-            std::cout << node->data.float_constant << " ";
-            break;
+//         case sNode::FLOAT_CONSTANT:
+//             std::cout << node->data.float_constant << " ";
+//             break;
 
-        case sNode::IDENTIFIER:
-            std::cout << node->data.identifier << " ";
-            break;
+//         case sNode::IDENTIFIER:
+//             std::cout << node->data.identifier << " ";
+//             break;
 
-        case sNode::OP:
-            std::cout << node->data.op << " ";
-            break;
-    }
-}
+//         case sNode::OP:
+//             std::cout << node->data.op << " ";
+//             break;
+//     }
+// }
 // ------------------------------------------------------------
 // evaluateAST
 // Post-order traversal of AST to simulate execution / generate IL

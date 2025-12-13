@@ -10,9 +10,9 @@ FSUB
 ITOF
 FDIV
 FTOI
-STORE k
+ASSIGN k
 ITOF
-STORE y
+ASSIGN y
 ---------------------- 
 Symbol table Contents
 Name | Type | Value
